@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block style %}
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  #vulnerabilities {
+    font-family: Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  #vulnerabilities td, #vulnerabilities th {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+
+  #vulnerabilities tr:nth-child(even){background-color: #f2f2f2;}
+
+  #vulnerabilities tr:hover {background-color: #ddd;}
+
+  #vulnerabilities th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #04AA6D;
+    color: white;
+  }
+  .container {
+    width: 400px;
+    white-space: nowrap;
+    height: 30px;
+  }
+
+  .container > div {
+    height: 50px;
+    width: 100px;
+    background: #555;
+    display: inline-block;
+    margin: 10px;
+  }
+</style>
+{% endblock style %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+  <form action="{% url 'home:index' %}" method="get">
+    <div class="container">
+      {{filter_form.search}}
+      {{filter_form.product_field_filter}}
+      <input type="submit" value="Submit">
+    </div>
+  </form>
+  <span><span><a href="{% url 'accounts:logout' %}">Logout</a></span>   Previous Login: {{user.previous_login | date}}</span>
+  <form action="{% url 'home:index' %}" method="post" style="display: none">
+      {% csrf_token %}
+      {{mark_vulnerability_form.id}}
+      {{mark_vulnerability_form.value}}
+      <input id="save_mark" hidden="true" type="submit" value="Submit">
+  </form>
+
+  <table id="vulnerabilities">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>CVSS Score</th>
+        <th>Title</th>
+        <th>Version</th>
+        <th>Last Update</th>
+        <th>Seen</th>
+        <th>Favourite</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for vulnerability in page_obj %}
+        <tr>
+          <th scope="row">{{vulnerability.id}}</th>
+          <td>{{vulnerability.cvss_score}}</td>
+          <td><a href="{% url 'home:edit' pk=vulnerability.id %}">{{vulnerability.title}}</a></td>
+          <td>{{vulnerability.version}}</td>
+          <td>{{vulnerability.last_update}}</td>
+          <td>{{vulnerability.seen}}</td>
+          <td>
+            <input type="checkbox" data-id='{{vulnerability.id}}' onclick="markVulnerabilityHandler(this)" {% if vulnerability.marked %}checked{% endif %}></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  
+function markVulnerabilityHandler(checkbox) {
+  var vulnerability_id = checkbox.getAttribute("data-id")
+  var marked = checkbox.checked
+
+  id_input = document.getElementById('id_id')
+  id_input.value = vulnerability_id
+  checkbox_input = document.getElementById('id_value')
+  checkbox_input.checked = marked
+
+  submit_btn = document.getElementById('save_mark')
+  submit_btn.click()
+
+}
+</script>
+{% endblock scripts %}
